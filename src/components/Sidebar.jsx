@@ -1,0 +1,130 @@
+import { useState } from 'react'
+
+const NAV = [
+  { id: 'dashboard', icon: '◎', label: 'Dashboard' },
+  { id: 'sedes',     icon: '⊞', label: 'Sedes' },
+  { id: 'historial', icon: '◷', label: 'Historial' },
+  { id: 'envio',     icon: '✉', label: 'Envío' },
+]
+
+export default function Sidebar({ view, onView, campanaActiva, campanas, onCampana }) {
+  const [expanded, setExpanded] = useState(true)
+  const camp = campanas?.find(c => c.id === campanaActiva)
+
+  return (
+    <aside
+      className="flex flex-col h-screen sticky top-0 z-40 transition-all duration-300"
+      style={{
+        width: expanded ? 220 : 64,
+        background: 'linear-gradient(180deg, #0B1730 0%, #0f1d4a 100%)',
+        borderRight: '1px solid rgba(255,255,255,0.06)',
+        flexShrink: 0,
+      }}
+    >
+      {/* Logo + toggle */}
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm flex-shrink-0 cursor-pointer select-none"
+          style={{ background: '#C8102E', letterSpacing: '-0.5px' }}
+          onClick={() => setExpanded(e => !e)}
+          title={expanded ? 'Colapsar' : 'Expandir'}
+        >
+          U
+        </div>
+        {expanded && (
+          <div className="animate-fadeIn overflow-hidden">
+            <div className="text-white font-semibold text-sm leading-tight">UCASAL</div>
+            <div className="text-white/40 text-xs">Cómo Vamos</div>
+          </div>
+        )}
+      </div>
+
+      {/* Campaña activa */}
+      {expanded && campanas?.length > 0 && (
+        <div className="px-3 py-3 border-b border-white/5 animate-fadeIn">
+          <div className="text-white/30 text-xs font-medium uppercase tracking-wider mb-2 px-1">Campaña</div>
+          <div className="flex flex-col gap-1">
+            {campanas.map(c => (
+              <button
+                key={c.id}
+                onClick={() => onCampana(c.id)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all duration-150 group"
+                style={{
+                  background: campanaActiva === c.id ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  border: campanaActiva === c.id ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+                }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: c.estado === 'activa' ? '#52b788' : '#6b7280' }}
+                />
+                <span className="text-white/80 text-xs font-medium truncate group-hover:text-white transition-colors">
+                  {c.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Nav items */}
+      <nav className="flex-1 py-3 px-2 flex flex-col gap-1">
+        {NAV.map(item => {
+          const active = view === item.id
+          return (
+            <button
+              key={item.id}
+              onClick={() => onView(item.id)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group w-full text-left"
+              style={{
+                background: active ? 'rgba(200,16,46,0.15)' : 'transparent',
+                border: active ? '1px solid rgba(200,16,46,0.25)' : '1px solid transparent',
+              }}
+              title={!expanded ? item.label : undefined}
+            >
+              <span
+                className="text-base flex-shrink-0 transition-colors"
+                style={{
+                  color: active ? '#f87171' : 'rgba(255,255,255,0.4)',
+                  width: 20, textAlign: 'center',
+                }}
+              >
+                {item.icon}
+              </span>
+              {expanded && (
+                <span
+                  className="text-sm font-medium transition-colors animate-fadeIn"
+                  style={{ color: active ? '#fff' : 'rgba(255,255,255,0.5)' }}
+                >
+                  {item.label}
+                </span>
+              )}
+              {active && (
+                <span
+                  className="ml-auto w-1 h-4 rounded-full flex-shrink-0"
+                  style={{ background: '#C8102E' }}
+                />
+              )}
+            </button>
+          )
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div className="px-3 py-4 border-t border-white/5">
+        {expanded ? (
+          <div className="animate-fadeIn">
+            <div className="text-white/20 text-xs leading-relaxed">
+              Dirección Operativa SEAD<br />
+              Zona Buenos Aires
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <div className="w-2 h-2 rounded-full" style={{ background: '#C8102E' }} />
+          </div>
+        )}
+      </div>
+    </aside>
+  )
+}
