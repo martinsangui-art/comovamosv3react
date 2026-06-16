@@ -91,12 +91,19 @@ export function useSheets() {
     setCopied(prev => ({ ...prev, [cod]: true }))
   }, [])
 
+  // Reemplaza el estado completo (útil para desmarcar también)
   const markAllCopied = useCallback((cods) => {
-    setCopied(prev => {
-      const next = { ...prev }
-      cods.forEach(c => { next[c] = true })
-      return next
-    })
+    if (Array.isArray(cods)) {
+      // Si es array, marcar esos como true
+      setCopied(prev => {
+        const next = { ...prev }
+        cods.forEach(c => { next[c] = true })
+        return next
+      })
+    } else {
+      // Si es objeto, reemplazar estado completo
+      setCopied(cods)
+    }
   }, [])
 
   // Guardar semana nueva en Sheets
