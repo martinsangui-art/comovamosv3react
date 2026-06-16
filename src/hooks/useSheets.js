@@ -1,0 +1,165 @@
+import { useState, useEffect, useCallback } from 'react'
+
+const API = 'https://script.google.com/macros/s/AKfycbyqeOBpxtYxavx-Uc8mTVRhsqb6HhY6N1RETcvNNVorRuuHMb111XLh_pVYhbSBry4/exec'
+const WEBHOOK = 'https://hook.us2.make.com/3xhcn02owq56c196s0j3anawf5zesxht'
+
+// JSONP helper — única forma confiable de llamar Apps Script desde el browser
+function jsonp(action, params = {}) {
+  return new Promise((resolve, reject) => {
+    const cb = '_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2)
+    let url = `${API}?action=${action}&callback=${cb}`
+    Object.entries(params).forEach(([k, v]) => { url += `&${k}=${encodeURIComponent(v)}` })
+
+    const timeout = setTimeout(() => {
+      cleanup()
+      reject(new Error('Timeout al conectar con Google Sheets'))
+    }, 20000)
+
+    window[cb] = (data) => {
+      cleanup()
+      if (data?.ok) resolve(data.data)
+      else reject(new Error(data?.error || 'Error en la API'))
+    }
+
+    function cleanup() {
+      clearTimeout(timeout)
+      delete window[cb]
+      if (el?.parentNode) el.parentNode.removeChild(el)
+    }
+
+    const el = document.createElement('script')
+    el.src = url
+    el.onerror = () => { cleanup(); reject(new Error('Error de red')) }
+    document.head.appendChild(el)
+  })
+}
+
+function post(body) {
+  return fetch(API, { method: 'POST', body: JSON.stringify(body) })
+    .then(r => r.text())
+    .then(t => {
+      const r = JSON.parse(t)
+      if (!r.ok) throw new Error(r.error)
+      return r.data
+    })
+}
+
+export function useSheets() {
+  const [state, setState] = useState({
+    loading: true,
+    error: null,
+    campanas: [],
+    sedes: [],
+    campanaActiva: null,
+    data: [],           // semana actual procesada
+    historial: [],      // historial completo
+  })
+
+  const [copied, setCopied] = useState({})  // {cod: true}
+
+  // Carga inicial
+  useEffect(() => {
+    Promise.all([jsonp('campanas'), jsonp('sedes')])
+      .then(([campanas, sedes]) => {
+        const activa = campanas.find(c => c.estado === 'activa') || campanas[campanas.length - 1]
+        setState(s => ({ ...s, campanas, sedes, campanaActiva: activa?.id || null, loading: false }))
+      })
+      .catch(err => setState(s => ({ ...s, loading: false, error: err.message })))
+  }, [])
+
+  // Cargar datos cuando cambia campaña activa
+  const cargarCampana = useCallback((campanaId) => {
+    setState(s => ({ ...s, loading: true, error: null, campanaActiva: campanaId, data: [] }))
+    setCopied({})
+
+    Promise.all([
+      jsonp('semana_actual', { campana: campanaId }),
+      jsonp('historial', { campana: campanaId }),
+    ]).then(([data, historial]) => {
+      setState(s => ({ ...s, loading: false, data, historial }))
+    }).catch(err => {
+      setState(s => ({ ...s, loading: false, error: err.message }))
+    })
+  }, [])
+
+  useEffect(() => {
+    if (state.campanaActiva) cargarCampana(state.campanaActiva)
+  }, [state.campanaActiva === null ? null : state.campanaActiva]) // eslint-disable-line
+
+  // Marcar sede como copiada
+  const markCopied = useCallback((cod) => {
+    setCopied(prev => ({ ...prev, [cod]: true }))
+  }, [])
+
+  const markAllCopied = useCallback((cods) => {
+    setCopied(prev => {
+      const next = { ...prev }
+      cods.forEach(c => { next[c] = true })
+      return next
+    })
+  }, [])
+
+  // Guardar semana nueva en Sheets
+  const guardarSemana = useCallback(async (fecha, sedesData) => {
+    const camp = state.campanas.find(c => c.id === state.campanaActiva)
+    const result = await post({
+      action: 'agregar_semana',
+      campana_id: state.campanaActiva,
+      campana_nombre: camp?.nombre || '',
+      fecha,
+      sedes: sedesData,
+    })
+    // Recargar datos
+    cargarCampana(state.campanaActiva)
+    return result
+  }, [state.campanaActiva, state.campanas, cargarCampana])
+
+  // Enviar email individual via Make
+  const enviarEmail = useCallback(async (d) => {
+    const camp = state.campanas.find(c => c.id === state.campanaActiva)
+    await fetch(WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sede: d.sede, email: d.email, saludo: d.saludo,
+        total: d.total, objetivo: d.objetivo, pct: d.pct,
+        var: d.var, fecha: d.fecha, campana: camp?.nombre || '',
+      }),
+    })
+    markCopied(d.cod_sede)
+  }, [state.campanaActiva, state.campanas, markCopied])
+
+  // Stats derivadas
+  const stats = (() => {
+    const { data } = state
+    if (!data.length) return { total: 0, enObj: 0, enProg: 0, sinIng: 0, sinAv: 0, pctGlobal: 0, totalIng: 0, totalObj: 0 }
+    let totalIng = 0, totalObj = 0, enObj = 0, enProg = 0, sinIng = 0, sinAv = 0
+    data.forEach(d => {
+      totalIng += d.total; totalObj += d.objetivo
+      const pct = d.pct || 0
+      if (d.total === 0) sinIng++
+      else if (pct >= 50) enObj++
+      else enProg++
+      if (d.var === 0) sinAv++
+    })
+    return {
+      total: data.length, enObj, enProg, sinIng, sinAv,
+      pctGlobal: totalObj > 0 ? Math.round(totalIng / totalObj * 100) : 0,
+      totalIng, totalObj,
+    }
+  })()
+
+  return {
+    ...state,
+    copied,
+    stats,
+    cargarCampana,
+    markCopied,
+    markAllCopied,
+    guardarSemana,
+    enviarEmail,
+    WEBHOOK,
+  }
+}
+
+export { post, jsonp }
