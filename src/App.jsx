@@ -7,6 +7,7 @@ import Dashboard from './views/Dashboard'
 import Sedes from './views/Sedes'
 import Historial from './views/Historial'
 import Envio from './views/Envio'
+import { LOGO_SIDEBAR_B64 } from './assets/logo_sidebar'
 
 function LoadingScreen({ error }) {
   return (
@@ -14,14 +15,13 @@ function LoadingScreen({ error }) {
       position: 'fixed', inset: 0, background: '#0B1730',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20,
     }}>
-      <div style={{
-        width: 64, height: 64, borderRadius: 18, background: '#C8102E',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 28, fontWeight: 700, color: '#fff', letterSpacing: '-1px',
-        boxShadow: '0 8px 32px rgba(200,16,46,0.4)',
-      }}>U</div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ color: '#fff', fontWeight: 600, fontSize: 18, marginBottom: 4 }}>UCASAL · Cómo Vamos</div>
+      <img
+        src={LOGO_SIDEBAR_B64}
+        alt="UCASAL Educación Digital"
+        style={{ width: 220, filter: 'brightness(0) invert(1)', opacity: 0.95 }}
+      />
+      <div style={{ textAlign: 'center', marginTop: -8 }}>
+        <div style={{ color: '#fff', fontWeight: 600, fontSize: 18, marginBottom: 4 }}>Gestión Comercial</div>
         <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Dirección Operativa SEAD · Buenos Aires</div>
       </div>
       {error ? (
