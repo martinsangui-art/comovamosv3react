@@ -23,7 +23,7 @@ export function enviarEmailViaScript(payload) {
     el.onerror = () => { cleanup(); reject(new Error('Error de red')) }
     document.head.appendChild(el)
   })
-}'
+}
 
 // JSONP helper — única forma confiable de llamar Apps Script desde el browser
 function jsonp(action, params = {}) {
