@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Cell, Legend } from 'recharts'
 
 const COLORS = ['#1B2A6B','#C8102E','#059669','#d97706','#7c3aed']
 
-export default function Historial({ historial, data }) {
+export default function Historial({ historial, data, onSeleccionChange }) {
   const [tab, setTab] = useState(1)
   const [sedesComp, setSedesComp] = useState([])
 
@@ -52,6 +52,10 @@ export default function Historial({ historial, data }) {
       prev.length < 5 ? [...prev, cod] : prev
     )
   }
+
+  useEffect(() => {
+    if (onSeleccionChange) onSeleccionChange(sedesComp)
+  }, [sedesComp])
 
   const sedeNombre = (cod) => {
     const found = todasSedes.find(([c]) => c === cod)?.[1] || cod
