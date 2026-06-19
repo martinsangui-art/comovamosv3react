@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSheets } from './hooks/useSheets'
 import Sidebar from './components/Sidebar'
 import ExcelUploader from './components/ExcelUploader'
+import InformesPDF from './components/InformesPDF'
 import Dashboard from './views/Dashboard'
 import Sedes from './views/Sedes'
 import Historial from './views/Historial'
@@ -42,7 +43,7 @@ function LoadingScreen({ error }) {
   )
 }
 
-function PageHeader({ title, sub, campana, fecha, sedes }) {
+function PageHeader({ title, sub, campana, fecha, sedes, children }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -52,7 +53,7 @@ function PageHeader({ title, sub, campana, fecha, sedes }) {
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f172a' }}>{title}</h1>
         {sub && <p style={{ margin: '2px 0 0', fontSize: 13, color: '#94a3b8' }}>{sub}</p>}
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         {campana && (
           <div style={{ padding: '6px 14px', borderRadius: 8, background: '#ecfdf5', border: '1px solid #6ee7b7', fontSize: 12, fontWeight: 600, color: '#059669' }}>
             {campana}
@@ -68,6 +69,7 @@ function PageHeader({ title, sub, campana, fecha, sedes }) {
             {sedes} sedes
           </div>
         )}
+        {children}
       </div>
     </div>
   )
@@ -82,6 +84,7 @@ const VIEW_META = {
 
 export default function App() {
   const [view, setView] = useState('dashboard')
+  const [sedesComparacion, setSedesComparacion] = useState([])
 
   const {
     loading, error, campanas, sedes, campanaActiva, data, historial,
@@ -108,7 +111,15 @@ export default function App() {
           title={meta.title} sub={meta.sub}
           campana={camp?.nombre} fecha={fecha}
           sedes={view === 'dashboard' || view === 'sedes' ? data.length : undefined}
-        />
+        >
+          {data.length > 0 && (
+            <InformesPDF
+              data={data} historial={historial}
+              campanas={campanas} campanaActiva={campanaActiva}
+              sedesSeleccionadas={sedesComparacion}
+            />
+          )}
+        </PageHeader>
 
         {/* Excel uploader — solo en Dashboard y solo si campaña activa */}
         {view === 'dashboard' && camp?.estado === 'activa' && (
@@ -127,7 +138,7 @@ export default function App() {
           <Sedes data={data} campanas={campanas} campanaActiva={campanaActiva} />
         )}
         {view === 'historial' && (
-          <Historial historial={historial} data={data} />
+          <Historial historial={historial} data={data} onSeleccionChange={setSedesComparacion} />
         )}
         {view === 'envio' && (
           <Envio
