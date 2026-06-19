@@ -9,6 +9,13 @@ function getEstado(d) {
   return 'amber'
 }
 
+function fmtFecha(iso) {
+  if (!iso) return ''
+  const p = String(iso).slice(0,10).split('-')
+  if (p.length !== 3) return iso
+  return `${p[2]}/${p[1]}/${p[0]}`
+}
+
 function buildEmailHTML(d, campNombre) {
   const color = { green: '#059669', amber: '#d97706', red: '#e11d48' }[getEstado(d)]
   const varTxt = d.var !== null
@@ -17,13 +24,13 @@ function buildEmailHTML(d, campNombre) {
       : ' (sin variación)')
     : ''
   return `<p>${d.saludo}:</p>
-<p style="margin-top:6px">Enviamos el resultado del <strong>cómo vamos</strong> al ${d.fecha}</p>
+<p style="margin-top:6px">Enviamos el resultado del <strong>cómo vamos</strong> al ${fmtFecha(d.fecha)}</p>
 <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:12px">
   <tr style="background:#1a1a2e;color:#fff">
     <th style="padding:7px 10px;text-align:center;font-size:11px">COD SEDE</th>
     <th style="padding:7px 10px;text-align:center;font-size:11px">SEDE</th>
     <th style="padding:7px 10px;text-align:center;font-size:11px">OBJETIVO ${campNombre.toUpperCase()}</th>
-    <th style="padding:7px 10px;text-align:center;font-size:11px">TOTAL AL ${d.fecha}</th>
+    <th style="padding:7px 10px;text-align:center;font-size:11px">TOTAL AL ${fmtFecha(d.fecha)}</th>
     <th style="padding:7px 10px;text-align:center;font-size:11px">% CUMPLIMIENTO</th>
   </tr>
   <tr>
@@ -178,7 +185,7 @@ export default function Envio({ data, copied, onCopied, campanas, campanaActiva,
     const campNom = camp?.nombre || ''
     await enviarEmailViaScript({
       to:      d.email,
-      subject: 'Como Vamos — ' + campNom + ' — ' + fecha,
+      subject: 'Como Vamos — ' + campNom + ' — ' + fmtFecha(fecha),
       html:    htmlRich,
       sede:    d.sede,
       cod:     String(d.cod_sede),
