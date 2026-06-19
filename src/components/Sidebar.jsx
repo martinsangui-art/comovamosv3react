@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { LOGO_SIDEBAR_B64 } from '../assets/logo_sidebar'
 
 const NAV = [
   { id: 'dashboard', icon: '◎', label: 'Dashboard' },
@@ -22,19 +23,27 @@ export default function Sidebar({ view, onView, campanaActiva, campanas, onCampa
       }}
     >
       {/* Logo + toggle */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm flex-shrink-0 cursor-pointer select-none"
-          style={{ background: '#C8102E', letterSpacing: '-0.5px' }}
-          onClick={() => setExpanded(e => !e)}
-          title={expanded ? 'Colapsar' : 'Expandir'}
-        >
-          U
-        </div>
-        {expanded && (
-          <div className="animate-fadeIn overflow-hidden">
-            <div className="text-white font-semibold text-sm leading-tight">UCASAL</div>
-            <div className="text-white/40 text-xs">Cómo Vamos</div>
+      <div
+        className="flex items-center px-4 py-5 border-b border-white/5 cursor-pointer select-none"
+        onClick={() => setExpanded(e => !e)}
+        title={expanded ? 'Colapsar' : 'Expandir'}
+        style={{ minHeight: 64 }}
+      >
+        {expanded ? (
+          <div className="animate-fadeIn" style={{ width: '100%' }}>
+            <img
+              src={LOGO_SIDEBAR_B64}
+              alt="UCASAL Educación Digital"
+              style={{ width: '100%', maxWidth: 168, display: 'block', filter: 'brightness(0) invert(1)', opacity: 0.92 }}
+            />
+            <div className="text-white/40 text-xs mt-1.5">Gestión Comercial</div>
+          </div>
+        ) : (
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm flex-shrink-0"
+            style={{ background: '#C8102E', letterSpacing: '-0.5px' }}
+          >
+            U
           </div>
         )}
       </div>
